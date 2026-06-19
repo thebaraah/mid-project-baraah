@@ -8,10 +8,10 @@ precipitation, and wind speed) for Amsterdam, Rotterdam, and Utrecht from the Op
 ## Architecture
 
 ```text
-Open-Meteo API ──► fetch_data() ──► save_raw() ──► Blob Storage (raw JSON, container "raw")
+Open-Meteo API ──┺ fetch_data() ──► save_raw() ──► Blob Storage (raw JSON, container "raw")
    (3 cities)               │
                             ▼
-                       process() ──► validate() (Pydantic) ──► transform() (pandas)
+                       process() ──┺ validate() (Pydantic) ──► transform() (pandas)
                                                                │
                                                                ▼
                                                       insert_readings() ──► Postgres
@@ -57,7 +57,7 @@ az containerapp job create \
   --name baraah-pipeline-job \
   --resource-group rg-hyf-data \
   --environment env-hyf-data \
-  --image hyfregistry.azurecr.io/my-pipeline:latest \
+  --image hyfregistry.azurecr.io/weatherb-pipeline:latest \
   --registry-server hyfregistry.azurecr.io \
   --trigger-type Schedule \
   --cron-expression "0 6 * * *" \
@@ -121,5 +121,5 @@ az storage blob list --account-name hyfstoragedev --container-name raw --prefix 
 ## Clean up
 
 ```bash
-az containerapp job delete --name my-pipeline-job --resource-group rg-hyf-data --yes
+az containerapp job delete --name baraah-pipeline-job --resource-group rg-hyf-data --yes
 ```

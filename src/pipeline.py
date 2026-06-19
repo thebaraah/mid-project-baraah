@@ -4,11 +4,9 @@ import logging
 import os
 import sys
 
-from dotenv import load_dotenv
-
-
 import pandas as pd
 import requests
+from dotenv import load_dotenv
 from pydantic import ValidationError
 
 from src.models import WeatherReading
@@ -34,8 +32,8 @@ OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 HOURLY_VARS = "temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m"
 
 
-def fetch_data():
-    """Fetch RAW API responses (NO processing)."""
+def fetch_data() -> list[dict]:
+    """Fetch raw API responses for all configured cities."""
     raw_responses = []
 
     for city, (lat, lon) in CITIES.items():
@@ -56,15 +54,8 @@ def fetch_data():
     return raw_responses
 
 
-# SAVE RAW TO BLOB
-def save_raw(raw_data):
-    upload_raw_json(raw_data)
-
-
-# process row to flatten
-def process(raw_data):
-    """Convert raw API into structured records."""
-    #
+def process(raw_data: list[dict]) -> list[dict]:
+    """Convert raw API responses into flat records."""
     records = []
 
     for item in raw_data:
@@ -88,8 +79,8 @@ def process(raw_data):
     return records
 
 
-# VALIDATION (Pydantic)
-def validate(records):
+def validate(records: list[dict]) -> list[WeatherReading]:
+    """Validate records with Pydantic; skip invalid ones."""
     valid = []
 
     for r in records:
@@ -102,8 +93,8 @@ def validate(records):
     return valid
 
 
-# TRANSFORM (Pandas)
-def transform(readings):
+def transform(readings: list[WeatherReading]) -> pd.DataFrame:
+    """Transform validated readings into a DataFrame ready for storage."""
     df = pd.DataFrame([r.model_dump() for r in readings])
 
     df["timestamp"] = pd.to_datetime(df["timestamp"])
@@ -116,15 +107,14 @@ def transform(readings):
     return df
 
 
-def run():
+def run() -> None:
+    """Run the full pipeline."""
     log.info("Pipeline started")
 
     raw = fetch_data()
-
-    save_raw(raw)
+    upload_raw_json(raw)
 
     records = process(raw)
-
     readings = validate(records)
 
     if not readings:
